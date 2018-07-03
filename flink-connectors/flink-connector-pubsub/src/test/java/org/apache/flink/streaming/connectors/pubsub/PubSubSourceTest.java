@@ -17,8 +17,12 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
+import org.apache.flink.api.common.state.OperatorStateStore;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.protobuf.ByteString;
@@ -28,9 +32,14 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.times;
+import java.util.List;
+
+import static java.util.Arrays.asList;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 
 /**
@@ -41,42 +50,110 @@ public class PubSubSourceTest {
 	private static final String MESSAGE = "Message";
 	private static final byte[] SERIALIZED_MESSAGE = MESSAGE.getBytes();
 	@Mock
-	private SubscriberFactory subscriberFactory;
+	private SubscriberWrapper subscriberWrapper;
 	@Mock
 	private SourceFunction.SourceContext<String> sourceContext;
 	@Mock
 	private DeserializationSchema<String> deserializationSchema;
 	@Mock
 	private AckReplyConsumer ackReplyConsumer;
+	@Mock
+	private PubSubGrpcClient pubSubGrpcClient;
+	@Mock
+	private StreamingRuntimeContext streamingRuntimeContext;
+	@Mock
+	private RuntimeContext runtimeContext;
+	@Mock
+	private OperatorStateStore operatorStateStore;
+	@Mock
+	private FunctionInitializationContext functionInitializationContext;
 
 	@Test
-	public void testOpen() throws Exception {
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberFactory, deserializationSchema);
+	public void testOpenWithoutCheckpointing() throws Exception {
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
+		pubSubSource.setRuntimeContext(runtimeContext);
 		pubSubSource.open(null);
 
-		verify(subscriberFactory, times(1)).initialize(pubSubSource);
+		verify(subscriberWrapper, times(1)).initialize(pubSubSource);
+		verify(subscriberWrapper, times(0)).createGrpcClient();
+	}
+
+	@Test
+	public void testOpenWithCheckpointing() throws Exception {
+		when(streamingRuntimeContext.isCheckpointingEnabled()).thenReturn(true);
+
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
+		pubSubSource.setRuntimeContext(streamingRuntimeContext);
+		pubSubSource.open(null);
+
+		verify(subscriberWrapper, times(1)).initialize(pubSubSource);
+		verify(subscriberWrapper, times(1)).createGrpcClient();
 	}
 
 	@Test
 	public void testRun() {
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberFactory, deserializationSchema);
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
 		pubSubSource.run(sourceContext);
 
-		verify(subscriberFactory, times(1)).startBlocking();
+		verify(subscriberWrapper, times(1)).startBlocking();
 	}
 
 	@Test
 	public void testWithoutCheckpoints() throws Exception {
 		when(deserializationSchema.deserialize(SERIALIZED_MESSAGE)).thenReturn(MESSAGE);
 
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberFactory, deserializationSchema);
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
+		pubSubSource.setRuntimeContext(runtimeContext);
 		pubSubSource.open(null);
+
 		pubSubSource.run(sourceContext);
+
+		verify(subscriberWrapper, times(1)).initialize(pubSubSource);
 
 		pubSubSource.receiveMessage(pubSubMessage(), ackReplyConsumer);
 
 		verify(sourceContext, times(1)).collect(MESSAGE);
 		verify(ackReplyConsumer, times(1)).ack();
+	}
+
+	@Test
+	public void testWithCheckpoints() throws Exception {
+		when(deserializationSchema.deserialize(SERIALIZED_MESSAGE)).thenReturn(MESSAGE);
+		when(streamingRuntimeContext.isCheckpointingEnabled()).thenReturn(true);
+		when(sourceContext.getCheckpointLock()).thenReturn("some object to lock on");
+		when(functionInitializationContext.getOperatorStateStore()).thenReturn(operatorStateStore);
+		when(operatorStateStore.getSerializableListState(any(String.class))).thenReturn(null);
+
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
+		pubSubSource.initializeState(functionInitializationContext);
+		pubSubSource.setRuntimeContext(streamingRuntimeContext);
+		pubSubSource.open(null);
+		verify(subscriberWrapper, times(1)).createGrpcClient();
+		verify(subscriberWrapper, times(1)).initialize(pubSubSource);
+
+		pubSubSource.run(sourceContext);
+
+		pubSubSource.receiveMessage(pubSubMessage(), ackReplyConsumer);
+
+		verify(sourceContext, times(1)).getCheckpointLock();
+		verify(sourceContext, times(1)).collect(MESSAGE);
+		verifyZeroInteractions(ackReplyConsumer);
+	}
+
+	@Test
+	public void testMessagesAcknowledgedWithPubSubGrpcClient() throws Exception {
+		when(subscriberWrapper.createGrpcClient()).thenReturn(pubSubGrpcClient);
+		when(streamingRuntimeContext.isCheckpointingEnabled()).thenReturn(true);
+
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
+		pubSubSource.setRuntimeContext(streamingRuntimeContext);
+		pubSubSource.open(null);
+
+		List<String> input = asList("1", "2", "3");
+
+		pubSubSource.acknowledgeSessionIDs(input);
+
+		verify(pubSubGrpcClient, times(1)).acknowledge(input);
 	}
 
 	private PubsubMessage pubSubMessage() {
