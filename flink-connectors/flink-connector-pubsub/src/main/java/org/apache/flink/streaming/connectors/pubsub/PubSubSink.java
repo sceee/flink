@@ -39,7 +39,7 @@ import java.io.IOException;
 
 /**
  * A sink function that outputs to PubSub.
- * @param <IN> the type
+ * @param <IN> type of PubSubSink messages to write
  */
 public class PubSubSink<IN> extends RichSinkFunction<IN> {
 
@@ -51,10 +51,7 @@ public class PubSubSink<IN> extends RichSinkFunction<IN> {
 
 	private transient Publisher publisher;
 
-	public PubSubSink(SerializableCredentialsProvider serializableCredentialsProvider,
-					  SerializationSchema<IN> serializationSchema,
-					  String projectName,
-					  String topicName) {
+	public PubSubSink(SerializableCredentialsProvider serializableCredentialsProvider, SerializationSchema<IN> serializationSchema, String projectName, String topicName) {
 		this.serializableCredentialsProvider = serializableCredentialsProvider;
 		this.serializationSchema = serializationSchema;
 		this.projectName = projectName;
@@ -111,10 +108,11 @@ public class PubSubSink<IN> extends RichSinkFunction<IN> {
 			.setData(ByteString.copyFrom(serializationSchema.serialize(message)))
 			.build();
 		publisher.publish(pubsubMessage);
+		publisher.publishAllOutstanding();
 	}
 
 	/**
-	 * Create a builder for a new PubSubSink
+	 * Create a builder for a new PubSubSink.
 	 * @param <IN> The generic of the type that is to be written into the sink.
 	 * @return a new Builder instance
 	 */
@@ -122,6 +120,10 @@ public class PubSubSink<IN> extends RichSinkFunction<IN> {
 		return new Builder<>();
 	}
 
+	/**
+	 * Builder to create a PubSubSink.
+	 * @param <IN> Type of PubSubSink to create.
+	 */
 	public static class Builder<IN> {
 		private SerializableCredentialsProvider serializableCredentialsProvider = null;
 		private SerializationSchema<IN>         serializationSchema             = null;
@@ -193,7 +195,7 @@ public class PubSubSink<IN> extends RichSinkFunction<IN> {
 		}
 
 		/**
-		 * Actually builder the desired instance of the PubSubSink
+		 * Actually builder the desired instance of the PubSubSink.
 		 * @return a brand new PubSubSink
 		 * @throws IOException incase of a problem getting the credentials
 		 * @throws IllegalArgumentException incase required fields were not specified.
