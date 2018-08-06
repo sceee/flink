@@ -36,7 +36,7 @@ under the License.
 	<packaging>jar</packaging>
 
 	<properties>
-		<pubsub.version>1.31.0</pubsub.version>
+		<pubsub.version>1.37.1</pubsub.version>
 	</properties>
 
 	<dependencies>
@@ -99,6 +99,14 @@ under the License.
 								<relocation>
 									<pattern>com.google.common.base</pattern>
 									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.com.google.common.base</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>io.grpc.auth</pattern>
+									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.io.grpc.auth</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>io.grpc.protobuf</pattern>
+									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.io.grpc.protobuf</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
