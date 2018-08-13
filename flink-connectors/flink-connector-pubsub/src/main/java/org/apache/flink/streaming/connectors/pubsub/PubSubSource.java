@@ -23,13 +23,12 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.MultipleIdsMessageAcknowledgingSourceBase;
+import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.pubsub.v1.PubsubMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,30 +37,24 @@ import java.util.List;
 /**
  * PubSub Source, this Source will consume PubSub messages from a subscription and Acknowledge them as soon as they have been received.
  */
-public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase<OUT, String, AckReplyConsumer> implements MessageReceiver, ResultTypeQueryable<OUT> {
-	private static final Logger LOG = LoggerFactory.getLogger(PubSubSource.class);
-
+public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase<OUT, String, AckReplyConsumer> implements MessageReceiver, ResultTypeQueryable<OUT>, ParallelSourceFunction<OUT> {
 	private final DeserializationSchema<OUT> deserializationSchema;
 	private final SubscriberWrapper          subscriberWrapper;
-	private final PubSubSourceBuilder.Mode   mode;
-	private final boolean                    autoAcknowledge;
 
 	protected transient SourceContext<OUT> sourceContext = null;
 
-	PubSubSource(SubscriberWrapper subscriberWrapper, DeserializationSchema<OUT> deserializationSchema, PubSubSourceBuilder.Mode mode) {
+	PubSubSource(SubscriberWrapper subscriberWrapper, DeserializationSchema<OUT> deserializationSchema) {
 		super(String.class);
 		this.deserializationSchema = deserializationSchema;
 		this.subscriberWrapper     = subscriberWrapper;
-		this.mode                  = mode;
-		this.autoAcknowledge       = mode == PubSubSourceBuilder.Mode.NONE;
 	}
 
 	@Override
 	public void open(Configuration configuration) throws Exception {
 		super.open(configuration);
 		subscriberWrapper.initialize(this);
-		if (hasNoCheckpointingEnabled(getRuntimeContext()) && needsCheckpointing()) {
-			throw new IllegalArgumentException("Checkpointing needs to be enabled to support: " + mode);
+		if (hasNoCheckpointingEnabled(getRuntimeContext())) {
+			throw new IllegalArgumentException("Checkpointing needs to be enabled to support: PubSub ATLEAST_ONCE");
 		}
 	}
 
@@ -84,12 +77,6 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 	public void receiveMessage(PubsubMessage message, AckReplyConsumer consumer) {
 		if (sourceContext == null) {
 			consumer.nack();
-			return;
-		}
-
-		if (autoAcknowledge) {
-			sourceContext.collect(deserializeMessage(message));
-			consumer.ack();
 			return;
 		}
 
@@ -124,9 +111,5 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 	@Override
 	public TypeInformation<OUT> getProducedType() {
 		return deserializationSchema.getProducedType();
-	}
-
-	private boolean needsCheckpointing() {
-		return mode == PubSubSourceBuilder.Mode.ATLEAST_ONCE || mode == PubSubSourceBuilder.Mode.EXACTLY_ONCE;
 	}
 }

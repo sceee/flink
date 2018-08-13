@@ -35,9 +35,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static org.apache.flink.streaming.connectors.pubsub.PubSubSourceBuilder.Mode.ATLEAST_ONCE;
-import static org.apache.flink.streaming.connectors.pubsub.PubSubSourceBuilder.Mode.EXACTLY_ONCE;
-import static org.apache.flink.streaming.connectors.pubsub.PubSubSourceBuilder.Mode.NONE;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -46,7 +43,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 
 /**
- * Test for {@link PubSubSource}.
+ * Test for {@link SourceFunction}.
  */
 @RunWith(MockitoJUnitRunner.class)
 public class PubSubSourceTest {
@@ -55,7 +52,7 @@ public class PubSubSourceTest {
 	@Mock
 	private SubscriberWrapper subscriberWrapper;
 	@Mock
-	private SourceFunction.SourceContext<String> sourceContext;
+	private org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext<String> sourceContext;
 	@Mock
 	private DeserializationSchema<String> deserializationSchema;
 	@Mock
@@ -70,19 +67,10 @@ public class PubSubSourceTest {
 	private FunctionInitializationContext functionInitializationContext;
 
 	@Test
-	public void testOpenWithoutCheckpointing() throws Exception {
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, NONE);
-		pubSubSource.setRuntimeContext(runtimeContext);
-		pubSubSource.open(null);
-
-		verify(subscriberWrapper, times(1)).initialize(pubSubSource);
-	}
-
-	@Test
 	public void testOpenWithCheckpointing() throws Exception {
 		when(streamingRuntimeContext.isCheckpointingEnabled()).thenReturn(true);
 
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, ATLEAST_ONCE);
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
 		pubSubSource.setRuntimeContext(streamingRuntimeContext);
 		pubSubSource.open(null);
 
@@ -91,28 +79,10 @@ public class PubSubSourceTest {
 
 	@Test
 	public void testRun() {
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, EXACTLY_ONCE);
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
 		pubSubSource.run(sourceContext);
 
 		verify(subscriberWrapper, times(1)).startBlocking();
-	}
-
-	@Test
-	public void testWithoutCheckpoints() throws Exception {
-		when(deserializationSchema.deserialize(SERIALIZED_MESSAGE)).thenReturn(MESSAGE);
-
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, NONE);
-		pubSubSource.setRuntimeContext(runtimeContext);
-		pubSubSource.open(null);
-
-		pubSubSource.run(sourceContext);
-
-		verify(subscriberWrapper, times(1)).initialize(pubSubSource);
-
-		pubSubSource.receiveMessage(pubSubMessage(), ackReplyConsumer);
-
-		verify(sourceContext, times(1)).collect(MESSAGE);
-		verify(ackReplyConsumer, times(1)).ack();
 	}
 
 	@Test
@@ -123,7 +93,7 @@ public class PubSubSourceTest {
 		when(functionInitializationContext.getOperatorStateStore()).thenReturn(operatorStateStore);
 		when(operatorStateStore.getSerializableListState(any(String.class))).thenReturn(null);
 
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, EXACTLY_ONCE);
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
 		pubSubSource.initializeState(functionInitializationContext);
 		pubSubSource.setRuntimeContext(streamingRuntimeContext);
 		pubSubSource.open(null);
@@ -139,10 +109,10 @@ public class PubSubSourceTest {
 	}
 
 	@Test
-	public void testMessagesAcknowledgedWithPubSubGrpcClient() throws Exception {
+	public void testMessagesAcknowledged() throws Exception {
 		when(streamingRuntimeContext.isCheckpointingEnabled()).thenReturn(true);
 
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, EXACTLY_ONCE);
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
 		pubSubSource.setRuntimeContext(streamingRuntimeContext);
 		pubSubSource.open(null);
 
@@ -154,16 +124,8 @@ public class PubSubSourceTest {
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testAtleastOnceWithoutCheckpointing() throws Exception {
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, ATLEAST_ONCE);
-		pubSubSource.setRuntimeContext(runtimeContext);
-
-		pubSubSource.open(null);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void testExactlyOnceWithoutCheckpointing() throws Exception {
-		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema, EXACTLY_ONCE);
+	public void testOnceWithoutCheckpointing() throws Exception {
+		PubSubSource<String> pubSubSource = new PubSubSource<>(subscriberWrapper, deserializationSchema);
 		pubSubSource.setRuntimeContext(runtimeContext);
 
 		pubSubSource.open(null);

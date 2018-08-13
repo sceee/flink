@@ -18,7 +18,6 @@
 package org.apache.flink.streaming.connectors.pubsub;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
 import com.google.api.gax.core.CredentialsProvider;
@@ -26,9 +25,10 @@ import com.google.auth.Credentials;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
- * Factory class to create a PubSubSource with custom options.
+ * Factory class to create a SourceFunction with custom options.
  */
 public class PubSubSourceBuilder<OUT> {
 	private SerializableCredentialsProvider serializableCredentialsProvider;
@@ -36,28 +36,11 @@ public class PubSubSourceBuilder<OUT> {
 	private String                          projectName;
 	private String                          subscriptionName;
 	private String                          hostAndPort;
-	private Mode                            mode;
+	private Long                            boundedByAmountOfMessages;
+	private Long                            boundedByTimeSinceLastMessage;
 
 	public static <OUT> PubSubSourceBuilder<OUT> builder() {
 		return new PubSubSourceBuilder<>();
-	}
-
-	/**
-	 * Possible modes which represent the guarantees given by the PubSubSource.
-	 */
-	public enum Mode {
-		NONE, ATLEAST_ONCE, EXACTLY_ONCE
-	}
-
-	/**
-	 * Set the mode, possible values NONE, ATLEAST_ONCE, EXACTLY_ONCE.
-	 * EXACTLY_ONCE will run with a parallelism of 1.
-	 * @param mode the mode to use
-	 * @return The current Builder instance
-	 */
-	public PubSubSourceBuilder<OUT> withMode(Mode mode) {
-		this.mode = mode;
-		return this;
 	}
 
 	/**
@@ -112,13 +95,39 @@ public class PubSubSourceBuilder<OUT> {
 		return this;
 	}
 
+	public PubSubSourceBuilder<OUT> boundedByAmountOfMessages(long maxAmountOfMessages) {
+		this.boundedByAmountOfMessages = maxAmountOfMessages;
+		return this;
+	}
+
+	public PubSubSourceBuilder<OUT> boundedByTimeSinceLastMessage(long timeSinceLastMessage) {
+		this.boundedByTimeSinceLastMessage = timeSinceLastMessage;
+		return this;
+	}
+
+	private Optional<Bound<OUT>> getBound() {
+		if (boundedByAmountOfMessages != null && boundedByTimeSinceLastMessage != null) {
+			return Optional.of(Bound.boundByAmountOfMessagesOrTimeSinceLastMessage(boundedByAmountOfMessages, boundedByTimeSinceLastMessage));
+		}
+
+		if (boundedByAmountOfMessages != null) {
+			return Optional.of(Bound.boundByAmountOfMessages(boundedByAmountOfMessages));
+		}
+
+		if (boundedByTimeSinceLastMessage != null) {
+			return Optional.of(Bound.boundByTimeSinceLastMessage(boundedByTimeSinceLastMessage));
+		}
+
+		return Optional.empty();
+	}
+
 	/**
 	 * Actually build the desired instance of the PubSubSourceBuilder.
-	 * @return a brand new PubSubSource
+	 * @return a brand new SourceFunction
 	 * @throws IOException incase of a problem getting the credentials
 	 * @throws IllegalArgumentException incase required fields were not specified.
 	 */
-	public SourceFunction<OUT> build() throws IOException {
+	public PubSubSource<OUT> build() throws IOException {
 		if (serializableCredentialsProvider == null) {
 			serializableCredentialsProvider = SerializableCredentialsProvider.credentialsProviderFromEnvironmentVariables();
 		}
@@ -128,9 +137,6 @@ public class PubSubSourceBuilder<OUT> {
 		if (projectName == null || subscriptionName == null) {
 			throw new IllegalArgumentException("The ProjectName And SubscriptionName has not been specified.");
 		}
-		if (mode == null) {
-			throw new IllegalArgumentException("The mode has not been specified");
-		}
 
 		SubscriberWrapper subscriberWrapper =
 			new SubscriberWrapper(serializableCredentialsProvider, ProjectSubscriptionName.of(projectName, subscriptionName));
@@ -139,13 +145,11 @@ public class PubSubSourceBuilder<OUT> {
 			subscriberWrapper.withHostAndPort(hostAndPort);
 		}
 
-		switch(mode) {
-			default:
-			case NONE:
-			case ATLEAST_ONCE:
-				return new ParallelPubSubSource<>(subscriberWrapper, deserializationSchema, mode);
-			case EXACTLY_ONCE:
-				return new PubSubSource<>(subscriberWrapper, deserializationSchema, mode);
+		Optional<Bound<OUT>> bound = getBound();
+		if (bound.isPresent()) {
+			return new BoundedPubSubSource<>(subscriberWrapper, deserializationSchema, bound.get());
 		}
+
+		return new PubSubSource<>(subscriberWrapper, deserializationSchema);
 	}
 }
