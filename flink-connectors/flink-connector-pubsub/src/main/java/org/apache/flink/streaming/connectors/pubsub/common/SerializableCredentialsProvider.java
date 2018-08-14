@@ -32,7 +32,7 @@ public class SerializableCredentialsProvider implements CredentialsProvider, Ser
 	private final Credentials credentials;
 
 	/**
-	 * @param credentials
+	 * @param credentials The google {@link Credentials} needed to connect to PubSub
 	 */
 	public SerializableCredentialsProvider(Credentials credentials) {
 		this.credentials = credentials;
