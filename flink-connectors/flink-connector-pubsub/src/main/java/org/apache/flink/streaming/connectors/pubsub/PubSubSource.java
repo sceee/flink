@@ -135,7 +135,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 	 * @param <BUILDER> The type of Builder to create the PubSubSource
 	 */
 	public static class PubSubSourceBuilder<OUT, PSS extends PubSubSource<OUT>, BUILDER extends PubSubSourceBuilder<OUT, PSS, BUILDER>> {
-		private PSS 							sourceUnderConstruction;
+		protected PSS 							sourceUnderConstruction;
 
 		private SubscriberWrapper               subscriberWrapper = null;
 		private SerializableCredentialsProvider serializableCredentialsProvider;

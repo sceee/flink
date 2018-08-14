@@ -35,14 +35,11 @@ class BoundedPubSubSource<OUT> extends PubSubSource<OUT> {
 
 	@SuppressWarnings("unchecked")
 	public static class BoundedPubSubSourceBuilder<OUT, PSS extends BoundedPubSubSource<OUT>, BUILDER extends BoundedPubSubSourceBuilder<OUT, PSS, BUILDER>> extends PubSubSourceBuilder<OUT, PSS, BUILDER> {
-		private final PSS sourceUnderConstruction;
-
 		private Long boundedByAmountOfMessages;
 		private Long boundedByTimeSinceLastMessage;
 
 		public BoundedPubSubSourceBuilder(PSS sourceUnderConstruction) {
 			super(sourceUnderConstruction);
-			this.sourceUnderConstruction = sourceUnderConstruction;
 		}
 
 		public BUILDER boundedByAmountOfMessages(long maxAmountOfMessages) {
@@ -74,10 +71,8 @@ class BoundedPubSubSource<OUT> extends PubSubSource<OUT> {
 
 		@Override
 		public PSS build() throws IOException {
-			PSS source = super.build();
-			source.setBound(createBound());
-
-			return source;
+			sourceUnderConstruction.setBound(createBound());
+			return super.build();
 		}
 	}
 
