@@ -17,7 +17,6 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
-import com.google.cloud.NoCredentials;
 import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
 import com.google.cloud.pubsub.v1.MessageReceiver;
@@ -28,7 +27,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.apache.flink.api.java.ClosureCleaner.ensureSerializable;
-import static org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider.credentialsProviderFromEnvironmentVariables;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

@@ -17,11 +17,6 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
-import com.google.api.gax.core.CredentialsProvider;
-import com.google.api.gax.core.NoCredentialsProvider;
-import com.google.auth.Credentials;
-import com.google.cloud.NoCredentials;
-import com.google.pubsub.v1.ProjectSubscriptionName;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -30,15 +25,17 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.source.MultipleIdsMessageAcknowledgingSourceBase;
 import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
+import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.auth.Credentials;
 import com.google.cloud.pubsub.v1.AckReplyConsumer;
 import com.google.cloud.pubsub.v1.MessageReceiver;
+import com.google.pubsub.v1.ProjectSubscriptionName;
 import com.google.pubsub.v1.PubsubMessage;
-import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 
 /**
@@ -131,7 +128,12 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		return new PubSubSourceBuilder<>(new PubSubSource<OUT>());
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * Builder to create PubSubSource.
+	 * @param <OUT> The type of objects which will be read
+	 * @param <PSS> The type of PubSubSource
+	 * @param <BUILDER> The type of Builder to create the PubSubSource
+	 */
 	public static class PubSubSourceBuilder<OUT, PSS extends PubSubSource<OUT>, BUILDER extends PubSubSourceBuilder<OUT, PSS, BUILDER>> {
 		private PSS 							sourceUnderConstruction;
 
@@ -154,7 +156,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		 */
 		public BUILDER withCredentials(Credentials credentials) {
 			this.serializableCredentialsProvider = new SerializableCredentialsProvider(credentials);
-			return (BUILDER)this;
+			return (BUILDER) this;
 		}
 
 		/**
@@ -174,16 +176,16 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		 */
 		public BUILDER withoutCredentials() {
 			this.serializableCredentialsProvider = SerializableCredentialsProvider.withoutCredentials();
-			return (BUILDER)this;
+			return (BUILDER) this;
 		}
 
 		/**
 		 * @param deserializationSchema Instance of a DeserializationSchema that converts the OUT into a byte[]
 		 * @return The current PubSubSourceBuilder instance
 		 */
-		public BUILDER withDeserializationSchema(DeserializationSchema<OUT> deserializationSchema) {
+		public BUILDER withDeserializationSchema(DeserializationSchema <OUT> deserializationSchema) {
 			this.deserializationSchema = deserializationSchema;
-			return (BUILDER)this;
+			return (BUILDER) this;
 		}
 
 		/**
@@ -194,7 +196,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		public BUILDER withProjectSubscriptionName(String projectName, String subscriptionName) {
 			this.projectName = projectName;
 			this.subscriptionName = subscriptionName;
-			return (BUILDER)this;
+			return (BUILDER) this;
 		}
 
 		/**
@@ -205,7 +207,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		 */
 		public BUILDER withHostAndPort(String hostAndPort) {
 			this.hostAndPort = hostAndPort;
-			return (BUILDER)this;
+			return (BUILDER) this;
 		}
 
 		/**
@@ -216,7 +218,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		 */
 		public BUILDER withSubscriberWrapper(SubscriberWrapper subscriberWrapper) {
 			this.subscriberWrapper = subscriberWrapper;
-			return (BUILDER)this;
+			return (BUILDER) this;
 		}
 
 		/**
@@ -252,6 +254,4 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 			return sourceUnderConstruction;
 		}
 	}
-
-
 }
