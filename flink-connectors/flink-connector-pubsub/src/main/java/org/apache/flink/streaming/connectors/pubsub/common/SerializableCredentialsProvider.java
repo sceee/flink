@@ -19,6 +19,7 @@ package org.apache.flink.streaming.connectors.pubsub.common;
 
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.auth.Credentials;
+import com.google.cloud.NoCredentials;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -46,6 +47,17 @@ public class SerializableCredentialsProvider implements CredentialsProvider, Ser
 	public static SerializableCredentialsProvider credentialsProviderFromEnvironmentVariables() throws IOException {
 		Credentials credentials = defaultCredentialsProviderBuilder().build().getCredentials();
 		return new SerializableCredentialsProvider(credentials);
+	}
+
+	/**
+	 * Creates a SerializableCredentialsProvider for a PubSubSubscription without any credentials. {@link com.google.cloud.pubsub.v1.SubscriptionAdminSettings}
+	 * This is ONLY useful when running tests locally against Mockito or the Google PubSub emulator
+	 * @see <a href="https://cloud.google.com/pubsub/docs/emulator" target="_top">https://cloud.google.com/pubsub/docs/emulator</a>.
+	 * @return serializableCredentialsProvider
+	 * @throws IOException thrown by {@link Credentials}
+	 */
+	public static SerializableCredentialsProvider withoutCredentials() {
+		return new SerializableCredentialsProvider(NoCredentials.getInstance());
 	}
 
 	@Override

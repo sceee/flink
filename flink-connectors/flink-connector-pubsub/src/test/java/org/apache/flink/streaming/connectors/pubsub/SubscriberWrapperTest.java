@@ -17,6 +17,7 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
+import com.google.cloud.NoCredentials;
 import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
 import com.google.cloud.pubsub.v1.MessageReceiver;
@@ -44,7 +45,7 @@ public class SubscriberWrapperTest {
 
 	@Test
 	public void testSerializedSubscriberBuilder() throws Exception {
-		SubscriberWrapper factory = new SubscriberWrapper(credentialsProviderFromEnvironmentVariables(), ProjectSubscriptionName.of("projectId", "subscriptionId"));
+		SubscriberWrapper factory = new SubscriberWrapper(SerializableCredentialsProvider.withoutCredentials(), ProjectSubscriptionName.of("projectId", "subscriptionId"));
 		ensureSerializable(factory);
 	}
 

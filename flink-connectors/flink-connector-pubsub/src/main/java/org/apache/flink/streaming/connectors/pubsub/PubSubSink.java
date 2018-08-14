@@ -17,6 +17,7 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
+import com.google.api.gax.core.NoCredentialsProvider;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
@@ -114,33 +115,33 @@ public class PubSubSink<IN> extends RichSinkFunction<IN> {
 	/**
 	 * Create a builder for a new PubSubSink.
 	 * @param <IN> The generic of the type that is to be written into the sink.
-	 * @return a new Builder instance
+	 * @return a new PubSubSinkBuilder instance
 	 */
-	public static <IN> Builder<IN> newBuilder() {
-		return new Builder<>();
+	public static <IN> PubSubSinkBuilder<IN> newBuilder() {
+		return new PubSubSinkBuilder<>();
 	}
 
 	/**
-	 * Builder to create a PubSubSink.
+	 * PubSubSinkBuilder to create a PubSubSink.
 	 * @param <IN> Type of PubSubSink to create.
 	 */
-	public static class Builder<IN> {
+	public static class PubSubSinkBuilder<IN> {
 		private SerializableCredentialsProvider serializableCredentialsProvider = null;
 		private SerializationSchema<IN>         serializationSchema             = null;
 		private String                          projectName                     = null;
 		private String                          topicName                       = null;
 		private String                          hostAndPort                     = null;
 
-		private Builder() {
+		private PubSubSinkBuilder() {
 		}
 
 		/**
 		 * Set the credentials.
 		 * If this is not used then the credentials are picked up from the environment variables.
 		 * @param credentials the Credentials needed to connect.
-		 * @return The current Builder instance
+		 * @return The current PubSubSinkBuilder instance
 		 */
-		public Builder<IN> withCredentials(Credentials credentials) {
+		public PubSubSinkBuilder<IN> withCredentials(Credentials credentials) {
 			this.serializableCredentialsProvider = new SerializableCredentialsProvider(credentials);
 			return this;
 		}
@@ -149,35 +150,45 @@ public class PubSubSink<IN> extends RichSinkFunction<IN> {
 		 * Set the CredentialsProvider.
 		 * If this is not used then the credentials are picked up from the environment variables.
 		 * @param credentialsProvider the custom SerializableCredentialsProvider instance.
-		 * @return The current Builder instance
+		 * @return The current PubSubSinkBuilder instance
 		 */
-		public Builder<IN> withCredentialsProvider(CredentialsProvider credentialsProvider) throws IOException {
+		public PubSubSinkBuilder<IN> withCredentialsProvider(CredentialsProvider credentialsProvider) throws IOException {
 			return withCredentials(credentialsProvider.getCredentials());
 		}
 
 		/**
-		 * @param serializationSchema Instance of a SerializationSchema that converts the IN into a byte[]
-		 * @return The current Builder instance
+		 * Set the credentials to be absent.
+		 * This means that no credentials are to be used at all.
+		 * @return The current PubSubSinkBuilder instance
 		 */
-		public Builder<IN> withSerializationSchema(SerializationSchema<IN> serializationSchema) {
+		public PubSubSinkBuilder<IN> withoutCredentials() {
+			this.serializableCredentialsProvider = SerializableCredentialsProvider.withoutCredentials();
+			return this;
+		}
+
+		/**
+		 * @param serializationSchema Instance of a SerializationSchema that converts the IN into a byte[]
+		 * @return The current PubSubSinkBuilder instance
+		 */
+		public PubSubSinkBuilder<IN> withSerializationSchema(SerializationSchema<IN> serializationSchema) {
 			this.serializationSchema = serializationSchema;
 			return this;
 		}
 
 		/**
 		 * @param projectName The name of the project in PubSub
-		 * @return The current Builder instance
+		 * @return The current PubSubSinkBuilder instance
 		 */
-		public Builder<IN> withProjectName (String projectName) {
+		public PubSubSinkBuilder<IN> withProjectName (String projectName) {
 			this.projectName = projectName;
 			return this;
 		}
 
 		/**
 		 * @param topicName The name of the topic in PubSub
-		 * @return The current Builder instance
+		 * @return The current PubSubSinkBuilder instance
 		 */
-		public Builder<IN> withTopicName (String topicName) {
+		public PubSubSinkBuilder<IN> withTopicName (String topicName) {
 			this.topicName = topicName;
 			return this;
 		}
@@ -187,9 +198,9 @@ public class PubSubSink<IN> extends RichSinkFunction<IN> {
 		 * Set the custom hostname/port combination of PubSub.
 		 * The ONLY reason to use this is during tests with the emulator provided by Google.
 		 * @param hostAndPort The combination of hostname and port to connect to ("hostname:1234")
-		 * @return The current instance
+		 * @return The current PubSubSinkBuilder instance
 		 */
-		public Builder<IN> withHostAndPort(String hostAndPort) {
+		public PubSubSinkBuilder<IN> withHostAndPort(String hostAndPort) {
 			this.hostAndPort = hostAndPort;
 			return this;
 		}
