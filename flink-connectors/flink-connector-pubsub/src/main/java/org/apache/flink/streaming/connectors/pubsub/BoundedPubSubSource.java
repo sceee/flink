@@ -38,7 +38,7 @@ class BoundedPubSubSource<OUT> extends PubSubSource<OUT> {
 		private Long boundedByAmountOfMessages;
 		private Long boundedByTimeSinceLastMessage;
 
-		public BoundedPubSubSourceBuilder(PSS sourceUnderConstruction) {
+		BoundedPubSubSourceBuilder(PSS sourceUnderConstruction) {
 			super(sourceUnderConstruction);
 		}
 
