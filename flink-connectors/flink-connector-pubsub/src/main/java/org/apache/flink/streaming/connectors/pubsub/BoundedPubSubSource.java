@@ -49,11 +49,19 @@ public class BoundedPubSubSource<OUT> extends PubSubSource<OUT> {
 		bound.receivedMessage();
 	}
 
+	/**
+	 * Creates a {@link BoundedPubSubSourceBuilder}.
+	 * @param <OUT> Type of Object which will be read by the produced {@link BoundedPubSubSource}
+	 */
 	@SuppressWarnings("unchecked")
 	public static <OUT> BoundedPubSubSourceBuilder<OUT, ? extends PubSubSource, ? extends BoundedPubSubSourceBuilder> newBuilder() {
 		return new BoundedPubSubSourceBuilder<>(new BoundedPubSubSource<OUT>());
 	}
 
+	/**
+	 * Builder to create BoundedPubSubSource.
+	 * @param <OUT> Type of Object which will be read by the BoundedPubSubSource
+	 */
 	@SuppressWarnings("unchecked")
 	public static class BoundedPubSubSourceBuilder<OUT, PSS extends BoundedPubSubSource<OUT>, BUILDER extends BoundedPubSubSourceBuilder<OUT, PSS, BUILDER>> extends PubSubSourceBuilder<OUT, PSS, BUILDER> {
 		private Long boundedByAmountOfMessages;
