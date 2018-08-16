@@ -22,7 +22,11 @@ import com.google.pubsub.v1.PubsubMessage;
 
 import java.io.IOException;
 
-class BoundedPubSubSource<OUT> extends PubSubSource<OUT> {
+/**
+ * A bounded PubSub Source, similar to {@link PubSubSource} but this will stop at some point. For example after a period of idle or and after n amount of messages have been received.
+ *
+ */
+public class BoundedPubSubSource<OUT> extends PubSubSource<OUT> {
 	private Bound<OUT> bound;
 
 	private BoundedPubSubSource() {
