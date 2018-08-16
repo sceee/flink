@@ -17,14 +17,15 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
-import com.google.pubsub.v1.ReceivedMessage;
-import org.apache.commons.lang.StringUtils;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.pubsub.emulator.GCloudUnitTestBase;
 import org.apache.flink.streaming.connectors.pubsub.emulator.PubsubHelper;
+
+import com.google.pubsub.v1.ReceivedMessage;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,13 +39,16 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Test of the PubSub SINK with the Google PubSub emulator.
+ */
 public class EmulatedPubSubSinkTest extends GCloudUnitTestBase {
 
-	private final transient Logger LOG = LoggerFactory.getLogger(EmulatedPubSubSinkTest.class);
+	private static final Logger LOG = LoggerFactory.getLogger(EmulatedPubSubSinkTest.class);
 
-	private final static String PROJECT_NAME = "FLProject";
-	private final static String TOPIC_NAME = "FLTopic";
-	private final static String SUBSCRIPTION_NAME = "FLSubscription";
+	private static final String PROJECT_NAME = "FLProject";
+	private static final String TOPIC_NAME = "FLTopic";
+	private static final String SUBSCRIPTION_NAME = "FLSubscription";
 
 	private static PubsubHelper pubsubHelper;
 
@@ -101,6 +105,5 @@ public class EmulatedPubSubSinkTest extends GCloudUnitTestBase {
 			assertTrue("Missing " + test, output.contains(StringUtils.reverse(test)));
 		}
 	}
-
 
 }

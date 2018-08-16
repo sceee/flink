@@ -17,15 +17,16 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
-import com.google.cloud.pubsub.v1.Publisher;
-import com.google.protobuf.ByteString;
-import com.google.pubsub.v1.PubsubMessage;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.io.LocalCollectionOutputFormat;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.pubsub.emulator.GCloudUnitTestBase;
 import org.apache.flink.streaming.connectors.pubsub.emulator.PubsubHelper;
+
+import com.google.cloud.pubsub.v1.Publisher;
+import com.google.protobuf.ByteString;
+import com.google.pubsub.v1.PubsubMessage;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,13 +41,16 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Test of the PubSub SOURCE with the Google PubSub emulator.
+ */
 public class EmulatedPubSubSourceTest extends GCloudUnitTestBase {
 
-	private final transient Logger LOG = LoggerFactory.getLogger(EmulatedPubSubSourceTest.class);
+	private static final Logger LOG = LoggerFactory.getLogger(EmulatedPubSubSourceTest.class);
 
-	private final static String PROJECT_NAME = "FLProject";
-	private final static String TOPIC_NAME = "FLTopic";
-	private final static String SUBSCRIPTION_NAME = "FLSubscription";
+	private static final String PROJECT_NAME = "FLProject";
+	private static final String TOPIC_NAME = "FLTopic";
+	private static final String SUBSCRIPTION_NAME = "FLSubscription";
 
 	private static PubsubHelper pubsubHelper;
 
@@ -98,7 +102,7 @@ public class EmulatedPubSubSourceTest extends GCloudUnitTestBase {
 				.build())
 			.name("PubSub source");
 
-		List<String> output = new ArrayList<>(5);
+		List<String> output = new ArrayList<>();
 		fromPubSub.writeUsingOutputFormat(new LocalCollectionOutputFormat<>(output));
 
 		env.execute();

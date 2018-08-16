@@ -18,9 +18,13 @@
 package org.apache.flink.streaming.connectors.pubsub;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+
 import org.junit.Test;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
  * Test for {@link Bound}.
@@ -120,6 +124,7 @@ public class BoundTest {
 		try {
 			Thread.sleep(sleepTime);
 		} catch (InterruptedException e) {
+			// Ignore any exceptions
 		}
 	}
 }

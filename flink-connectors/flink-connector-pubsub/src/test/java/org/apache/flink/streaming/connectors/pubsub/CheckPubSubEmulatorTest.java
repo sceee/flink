@@ -17,13 +17,14 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
+import org.apache.flink.streaming.connectors.pubsub.emulator.GCloudUnitTestBase;
+import org.apache.flink.streaming.connectors.pubsub.emulator.PubsubHelper;
+
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import com.google.pubsub.v1.ReceivedMessage;
-import org.apache.flink.streaming.connectors.pubsub.emulator.GCloudUnitTestBase;
-import org.apache.flink.streaming.connectors.pubsub.emulator.PubsubHelper;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,13 +38,16 @@ import java.util.concurrent.TimeoutException;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Tests to ensure the docker image with PubSub is working correctly.
+ */
 public class CheckPubSubEmulatorTest extends GCloudUnitTestBase {
 
-	private final transient Logger LOG = LoggerFactory.getLogger(CheckPubSubEmulatorTest.class);
+	private static final Logger LOG = LoggerFactory.getLogger(CheckPubSubEmulatorTest.class);
 
-	private final static String PROJECT_NAME = "Project";
-	private final static String TOPIC_NAME = "Topic";
-	private final static String SUBSCRIPTION_NAME = "Subscription";
+	private static final String PROJECT_NAME = "Project";
+	private static final String TOPIC_NAME = "Topic";
+	private static final String SUBSCRIPTION_NAME = "Subscription";
 
 	private static PubsubHelper pubsubHelper = getPubsubHelper();
 

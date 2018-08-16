@@ -17,6 +17,8 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
+import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
+
 import com.google.api.core.ApiService;
 import com.google.api.gax.grpc.GrpcTransportChannel;
 import com.google.api.gax.rpc.FixedTransportChannelProvider;
@@ -26,7 +28,6 @@ import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
 import java.io.Serializable;
 

@@ -34,6 +34,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.flink.streaming.connectors.pubsub.emulator.GCloudEmulatorManager.getDockerIpAddress;
 import static org.apache.flink.streaming.connectors.pubsub.emulator.GCloudEmulatorManager.getDockerPubSubPort;
 
+/**
+ * The base class from which unit tests should inherit if they need to use the Google cloud emulators.
+ */
 public class GCloudUnitTestBase implements Serializable {
 	@BeforeClass
 	public static void launchGCloudEmulator() throws Exception {
