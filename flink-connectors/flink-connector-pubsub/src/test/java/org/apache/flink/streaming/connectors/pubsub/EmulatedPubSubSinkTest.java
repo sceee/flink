@@ -64,7 +64,6 @@ public class EmulatedPubSubSinkTest extends GCloudUnitTestBase {
 	@Test
 	public void testFlinkSink() throws Exception {
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//		env.enableCheckpointing(100);
 
 		List<String> input = Arrays.asList("One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eigth", "Nine", "Ten");
 
