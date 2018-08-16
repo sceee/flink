@@ -63,7 +63,8 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		super.open(configuration);
 		subscriberWrapper.initialize(this);
 		if (hasNoCheckpointingEnabled(getRuntimeContext())) {
-			throw new IllegalArgumentException("Checkpointing needs to be enabled to support: PubSub ATLEAST_ONCE");
+			throw new IllegalArgumentException("The PubSubSource REQUIRES Checkpointing to be enabled and " +
+				"the checkpointing frequency must be MUCH lower than the PubSub timeout for it to retry a message.");
 		}
 	}
 
