@@ -19,9 +19,11 @@ package org.apache.flink.streaming.connectors.pubsub.emulator;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +50,7 @@ public class GCloudEmulatorManager {
 	private static String dockerIpAddress = "127.0.0.1";
 
 	public static final String INTERNAL_PUBSUB_PORT = "22222";
-	public static final String DOCKER_IMAGE_NAME = "google/cloud-sdk";
+	public static final String DOCKER_IMAGE_NAME = "google/cloud-sdk:latest";
 
 	private static String pubsubPort;
 
@@ -82,8 +84,20 @@ public class GCloudEmulatorManager {
 		ContainerInfo containerInfo;
 		String id;
 
+		try {
+			docker.inspectImage(DOCKER_IMAGE_NAME);
+		} catch (ImageNotFoundException e) {
+			// No such image so we must download it first.
+			LOG.info("| - Getting docker image \"{}\"", DOCKER_IMAGE_NAME);
+			docker.pull(DOCKER_IMAGE_NAME, message -> {
+				if (message.id() != null && message.progress() != null) {
+					LOG.info("| - Downloading > {} : {}", message.id(), message.progress());
+				}
+			});
+		}
+
 		// No such container. Good, we create one!
-		LOG.info("| - Creating new");
+		LOG.info("| - Creating new container");
 
 		// Bind container ports to host ports
 		final Map<String, List<PortBinding>> portBindings = new HashMap<>();
@@ -176,7 +190,6 @@ public class GCloudEmulatorManager {
 					return false;
 				}
 				try {
-					LOG.warn("-");
 					Thread.sleep(100); // Sleep a very short time
 				} catch (InterruptedException e1) {
 					// Ignore
