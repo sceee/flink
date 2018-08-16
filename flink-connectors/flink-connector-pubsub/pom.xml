@@ -115,8 +115,8 @@ under the License.
 
 	</dependencies>
 
-    <build>
-        <plugins>
+	<build>
+		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -137,26 +137,33 @@ under the License.
 							<relocations>
 								<relocation>
 									<pattern>com.google.guava</pattern>
-									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.com.google.guava</shadedPattern>
+									<shadedPattern>
+										org.apache.flink.streaming.connectors.pubsub.shaded.com.google.guava
+									</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>com.google.common.base</pattern>
-									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.com.google.common.base</shadedPattern>
+									<shadedPattern>
+										org.apache.flink.streaming.connectors.pubsub.shaded.com.google.common.base
+									</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>io.grpc.auth</pattern>
-									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.io.grpc.auth</shadedPattern>
+									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.io.grpc.auth
+									</shadedPattern>
 								</relocation>
 								<relocation>
 									<pattern>io.grpc.protobuf</pattern>
-									<shadedPattern>org.apache.flink.streaming.connectors.pubsub.shaded.io.grpc.protobuf</shadedPattern>
+									<shadedPattern>
+										org.apache.flink.streaming.connectors.pubsub.shaded.io.grpc.protobuf
+									</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-        </plugins>
-    </build>
+		</plugins>
+	</build>
 
 </project>

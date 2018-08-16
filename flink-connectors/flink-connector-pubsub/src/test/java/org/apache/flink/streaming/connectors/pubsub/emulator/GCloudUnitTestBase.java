@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.flink.streaming.connectors.pubsub.emulator;
 
 import com.google.api.gax.core.CredentialsProvider;
@@ -11,7 +28,6 @@ import io.grpc.ManagedChannelBuilder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-
 import java.io.Serializable;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -19,63 +35,47 @@ import static org.apache.flink.streaming.connectors.pubsub.emulator.GCloudEmulat
 import static org.apache.flink.streaming.connectors.pubsub.emulator.GCloudEmulatorManager.getDockerPubSubPort;
 
 public class GCloudUnitTestBase implements Serializable {
-    @BeforeClass
-    public static void launchGCloudEmulator() throws Exception {
-        // Separated out into separate class because Beam needs the entire test class to be serializable
-        GCloudEmulatorManager.launchDocker();
-    }
+	@BeforeClass
+	public static void launchGCloudEmulator() throws Exception {
+		// Separated out into separate class so the entire test class to be serializable
+		GCloudEmulatorManager.launchDocker();
+	}
 
-    @AfterClass
-    public static void terminateGCloudEmulator() throws DockerException, InterruptedException {
-        GCloudEmulatorManager.terminateDocker();
-    }
+	@AfterClass
+	public static void terminateGCloudEmulator() throws DockerException, InterruptedException {
+		GCloudEmulatorManager.terminateDocker();
+	}
 
-    // ====================================================================================
-    // DataStore helpers
+	// ====================================================================================
+	// Pubsub helpers
 
-//    public static DatastoreOptions getDatastoreOptions() {
-//        return DatastoreOptions
-//                .newBuilder()
-//                .setHost("http://" + getDockerIpAddress() + ":" + getDockerDataStorePort())
-//                .setProjectId(UNITTEST_PROJECT_ID)
-//                .setCredentials(NoCredentials.getInstance())
-//                .build();
-//    }
+	private static ManagedChannel channel = null;
+	private static TransportChannelProvider channelProvider = null;
+	private static CredentialsProvider credentialsProvider = null;
 
-    // ====================================================================================
-    // Pubsub helpers
+	public static PubsubHelper getPubsubHelper() {
+		if (channel == null) {
+			//noinspection deprecation
+			channel = ManagedChannelBuilder
+				.forTarget(getPubSubHostPort())
+				.usePlaintext(true)
+				.build();
+			channelProvider = FixedTransportChannelProvider
+				.create(GrpcTransportChannel.create(channel));
+			credentialsProvider = NoCredentialsProvider.create();
+		}
+		return new PubsubHelper(channelProvider, credentialsProvider);
+	}
 
-    private static ManagedChannel           channel             = null;
-    private static TransportChannelProvider channelProvider     = null;
-    private static CredentialsProvider      credentialsProvider = null;
+	public static String getPubSubHostPort() {
+		return getDockerIpAddress() + ":" + getDockerPubSubPort();
+	}
 
-    public static PubsubHelper getPubsubHelper() {
-        if (channel == null) {
-            channel = ManagedChannelBuilder
-                    .forTarget(getPubSubHostPort())
-                    .usePlaintext(true)
-                    .build();
-            channelProvider = FixedTransportChannelProvider
-                    .create(GrpcTransportChannel.create(channel));
-            credentialsProvider = NoCredentialsProvider.create();
-        }
-        return new PubsubHelper(channelProvider, credentialsProvider);
-    }
-
-    public static String getPubSubHostPort() {
-        return getDockerIpAddress() + ":" + getDockerPubSubPort();
-    }
-
-    @AfterClass
-    public static void cleanupPubsubChannel() throws InterruptedException {
-        if (channel != null) {
-            channel.shutdownNow().awaitTermination(1, SECONDS);
-            channel = null;
-        }
-    }
-
-    // ====================================================================================
-    // BigTable helpers
-
-    // TODO: The same for BigTable
+	@AfterClass
+	public static void cleanupPubsubChannel() throws InterruptedException {
+		if (channel != null) {
+			channel.shutdownNow().awaitTermination(1, SECONDS);
+			channel = null;
+		}
+	}
 }

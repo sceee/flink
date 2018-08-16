@@ -17,10 +17,9 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
-import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
-
 import com.google.cloud.pubsub.v1.MessageReceiver;
 import com.google.pubsub.v1.ProjectSubscriptionName;
+import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;

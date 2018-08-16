@@ -17,8 +17,6 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
-import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
-
 import com.google.api.core.ApiService;
 import com.google.api.gax.grpc.GrpcTransportChannel;
 import com.google.api.gax.rpc.FixedTransportChannelProvider;
@@ -28,18 +26,19 @@ import com.google.cloud.pubsub.v1.Subscriber;
 import com.google.pubsub.v1.ProjectSubscriptionName;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
 import java.io.Serializable;
 
 class SubscriberWrapper implements Serializable {
 	private final SerializableCredentialsProvider serializableCredentialsProvider;
-	private final String                          projectId;
-	private final String                          subscriptionId;
-	private       String                          hostAndPort = null;
+	private final String projectId;
+	private final String subscriptionId;
+	private String hostAndPort = null;
 
-	private transient Subscriber       subscriber;
-	private transient ManagedChannel   managedChannel = null;
-	private transient TransportChannel channel        = null;
+	private transient Subscriber subscriber;
+	private transient ManagedChannel managedChannel = null;
+	private transient TransportChannel channel = null;
 
 	SubscriberWrapper(SerializableCredentialsProvider serializableCredentialsProvider, ProjectSubscriptionName projectSubscriptionName) {
 		this.serializableCredentialsProvider = serializableCredentialsProvider;
@@ -49,14 +48,14 @@ class SubscriberWrapper implements Serializable {
 
 	void initialize(MessageReceiver messageReceiver) {
 		Subscriber.Builder builder = Subscriber
-				.newBuilder(ProjectSubscriptionName.of(projectId, subscriptionId), messageReceiver)
-				.setCredentialsProvider(serializableCredentialsProvider);
+			.newBuilder(ProjectSubscriptionName.of(projectId, subscriptionId), messageReceiver)
+			.setCredentialsProvider(serializableCredentialsProvider);
 
 		if (hostAndPort != null) {
 			managedChannel = ManagedChannelBuilder
-					.forTarget(hostAndPort)
-					.usePlaintext(true) // This is 'Ok' because this is ONLY used for testing.
-					.build();
+				.forTarget(hostAndPort)
+				.usePlaintext(true) // This is 'Ok' because this is ONLY used for testing.
+				.build();
 			channel = GrpcTransportChannel.newBuilder().setManagedChannel(managedChannel).build();
 			builder.setChannelProvider(FixedTransportChannelProvider.create(channel));
 		}

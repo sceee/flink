@@ -17,6 +17,12 @@
 
 package org.apache.flink.streaming.connectors.pubsub;
 
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.auth.Credentials;
+import com.google.cloud.pubsub.v1.AckReplyConsumer;
+import com.google.cloud.pubsub.v1.MessageReceiver;
+import com.google.pubsub.v1.ProjectSubscriptionName;
+import com.google.pubsub.v1.PubsubMessage;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -27,13 +33,6 @@ import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.streaming.connectors.pubsub.common.SerializableCredentialsProvider;
 
-import com.google.api.gax.core.CredentialsProvider;
-import com.google.auth.Credentials;
-import com.google.cloud.pubsub.v1.AckReplyConsumer;
-import com.google.cloud.pubsub.v1.MessageReceiver;
-import com.google.pubsub.v1.ProjectSubscriptionName;
-import com.google.pubsub.v1.PubsubMessage;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -43,7 +42,7 @@ import java.util.List;
  */
 public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase<OUT, String, AckReplyConsumer> implements MessageReceiver, ResultTypeQueryable<OUT>, ParallelSourceFunction<OUT> {
 	private DeserializationSchema<OUT> deserializationSchema;
-	private SubscriberWrapper          subscriberWrapper;
+	private SubscriberWrapper subscriberWrapper;
 
 	protected transient SourceContext<OUT> sourceContext = null;
 
@@ -123,26 +122,27 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		return deserializationSchema.getProducedType();
 	}
 
-	@SuppressWarnings("unchecked")
-	public static <OUT> PubSubSourceBuilder<OUT, ? extends PubSubSource, ? extends PubSubSourceBuilder> newBuilder() {
-		return new PubSubSourceBuilder<>(new PubSubSource<OUT>());
+	public static <OUT> PubSubSourceBuilder<OUT, ? extends PubSubSource<OUT>, ? extends PubSubSourceBuilder<OUT, ?, ?>> newBuilder() {
+		return new PubSubSourceBuilder<>(new PubSubSource<>());
 	}
 
 	/**
 	 * Builder to create PubSubSource.
-	 * @param <OUT> The type of objects which will be read
-	 * @param <PSS> The type of PubSubSource
+	 *
+	 * @param <OUT>     The type of objects which will be read
+	 * @param <PSS>     The type of PubSubSource
 	 * @param <BUILDER> The type of Builder to create the PubSubSource
 	 */
+	@SuppressWarnings("unchecked")
 	public static class PubSubSourceBuilder<OUT, PSS extends PubSubSource<OUT>, BUILDER extends PubSubSourceBuilder<OUT, PSS, BUILDER>> {
-		protected PSS 							sourceUnderConstruction;
+		protected PSS sourceUnderConstruction;
 
-		private SubscriberWrapper               subscriberWrapper = null;
+		private SubscriberWrapper subscriberWrapper = null;
 		private SerializableCredentialsProvider serializableCredentialsProvider;
-		private DeserializationSchema<OUT>      deserializationSchema;
-		private String                          projectName;
-		private String                          subscriptionName;
-		private String                          hostAndPort;
+		private DeserializationSchema<OUT> deserializationSchema;
+		private String projectName;
+		private String subscriptionName;
+		private String hostAndPort;
 
 		protected PubSubSourceBuilder(PSS sourceUnderConstruction) {
 			this.sourceUnderConstruction = sourceUnderConstruction;
@@ -151,6 +151,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		/**
 		 * Set the credentials.
 		 * If this is not used then the credentials are picked up from the environment variables.
+		 *
 		 * @param credentials the Credentials needed to connect.
 		 * @return The current PubSubSourceBuilder instance
 		 */
@@ -162,6 +163,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		/**
 		 * Set the CredentialsProvider.
 		 * If this is not used then the credentials are picked up from the environment variables.
+		 *
 		 * @param credentialsProvider the custom SerializableCredentialsProvider instance.
 		 * @return The current PubSubSourceBuilder instance
 		 */
@@ -172,6 +174,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		/**
 		 * Set the credentials to be absent.
 		 * This means that no credentials are to be used at all.
+		 *
 		 * @return The current PubSubSourceBuilder instance
 		 */
 		public BUILDER withoutCredentials() {
@@ -183,13 +186,13 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		 * @param deserializationSchema Instance of a DeserializationSchema that converts the OUT into a byte[]
 		 * @return The current PubSubSourceBuilder instance
 		 */
-		public BUILDER withDeserializationSchema(DeserializationSchema <OUT> deserializationSchema) {
+		public BUILDER withDeserializationSchema(DeserializationSchema<OUT> deserializationSchema) {
 			this.deserializationSchema = deserializationSchema;
 			return (BUILDER) this;
 		}
 
 		/**
-		 * @param projectName The name of the project in GoogleCloudPlatform
+		 * @param projectName      The name of the project in GoogleCloudPlatform
 		 * @param subscriptionName The name of the subscription in PubSub
 		 * @return The current PubSubSourceBuilder instance
 		 */
@@ -202,6 +205,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		/**
 		 * Set the custom hostname/port combination of PubSub.
 		 * The ONLY reason to use this is during tests with the emulator provided by Google.
+		 *
 		 * @param hostAndPort The combination of hostname and port to connect to ("hostname:1234")
 		 * @return The current PubSubSourceBuilder instance
 		 */
@@ -213,6 +217,7 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 		/**
 		 * Set a complete SubscriberWrapper.
 		 * The ONLY reason to use this is during tests.
+		 *
 		 * @param subscriberWrapper The fully instantiated SubscriberWrapper
 		 * @return The current PubSubSourceBuilder instance
 		 */
@@ -223,8 +228,9 @@ public class PubSubSource<OUT> extends MultipleIdsMessageAcknowledgingSourceBase
 
 		/**
 		 * Actually build the desired instance of the PubSubSourceBuilder.
+		 *
 		 * @return a brand new SourceFunction
-		 * @throws IOException incase of a problem getting the credentials
+		 * @throws IOException              incase of a problem getting the credentials
 		 * @throws IllegalArgumentException incase required fields were not specified.
 		 */
 		public PSS build() throws IOException {
